@@ -42,7 +42,7 @@ export default function App() {
             </Link>
             <div className="collapse navbar-collapse">
               <ul className="navbar-nav me-auto">
-                {user.role === "admin" && (
+                {(user.role === "cashier" || user.role === "admin") && (
                   <li className="nav-item">
                     <Link className="nav-link" to="/inventory">
                       Inventario
@@ -92,7 +92,7 @@ export default function App() {
         <Route
           path="/inventory"
           element={
-            <ProtectedRoute roles={["admin"]}>
+            <ProtectedRoute roles={["cashier", "admin"]}>
               <Inventory />
             </ProtectedRoute>
           }

@@ -20,6 +20,8 @@ export default function Inventory() {
   const [searchSku, setSearchSku] = useState("");
 
   const token = localStorage.getItem("token");
+  const user = JSON.parse(localStorage.getItem("user")); 
+  const role = user?.role; 
 
   const load = async () => {
     const res = await fetchProducts(token);
@@ -53,20 +55,19 @@ export default function Inventory() {
     await load();
   };
 
-const handleSearch = async () => {
-  if (!searchSku) {
-    await load(); // si el campo está vacío, carga todos los productos
-    return;
-  }
-  try {
-    const product = await fetchProductBySku(token, searchSku);
-    setProducts([product]);
-  } catch (error) {
-    alert(error.message);
-    setProducts([]);
-  }
-};
-
+  const handleSearch = async () => {
+    if (!searchSku) {
+      await load();
+      return;
+    }
+    try {
+      const product = await fetchProductBySku(token, searchSku);
+      setProducts([product]);
+    } catch (error) {
+      alert(error.message);
+      setProducts([]);
+    }
+  };
 
   const handleEdit = (p) => {
     setForm({
@@ -87,88 +88,91 @@ const handleSearch = async () => {
 
   return (
     <div className="container mt-3">
-      <h3>Gestión de Inventario</h3>
+      <h3>Inventario</h3>
 
-      {/* Formulario */}
-      <form className="row g-2" onSubmit={handleSubmit}>
-        <div className="col-md-2">
-          <input
-            className="form-control"
-            placeholder="SKU"
-            name="sku"
-            value={form.sku}
-            onChange={handleChange}
-            required
-            disabled={!!editingId}
-          />
-        </div>
-        <div className="col-md-3">
-          <input
-            className="form-control"
-            placeholder="Nombre"
-            name="name"
-            value={form.name}
-            onChange={handleChange}
-            required
-          />
-        </div>
-        <div className="col-md-3">
-          <input
-            className="form-control"
-            placeholder="Descripción"
-            name="description"
-            value={form.description}
-            onChange={handleChange}
-          />
-        </div>
-        <div className="col-md-2">
-          <input
-            type="number"
-            step="0.01"
-            className="form-control"
-            placeholder="Precio"
-            name="price"
-            value={form.price}
-            onChange={handleChange}
-            required
-          />
-        </div>
-        <div className="col-md-2">
-          <input
-            type="number"
-            className="form-control"
-            placeholder="Stock"
-            name="stock"
-            value={form.stock}
-            onChange={handleChange}
-            required
-          />
-        </div>
-        <div className="col-12 d-flex gap-2">
-          <button type="submit" className="btn btn-success">
-            {editingId ? "Actualizar" : "Crear"}
-          </button>
-          {editingId && (
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={() => {
-                setForm({
-                  sku: "",
-                  name: "",
-                  description: "",
-                  price: "",
-                  stock: "",
-                });
-                setEditingId(null);
-              }}
-            >
-              Cancelar
+      {/* Solo los admins pueden crear/editar/eliminar */}
+      {role === "admin" && (
+        <form className="row g-2" onSubmit={handleSubmit}>
+          <div className="col-md-2">
+            <input
+              className="form-control"
+              placeholder="SKU"
+              name="sku"
+              value={form.sku}
+              onChange={handleChange}
+              required
+              disabled={!!editingId}
+            />
+          </div>
+          <div className="col-md-3">
+            <input
+              className="form-control"
+              placeholder="Nombre"
+              name="name"
+              value={form.name}
+              onChange={handleChange}
+              required
+            />
+          </div>
+          <div className="col-md-3">
+            <input
+              className="form-control"
+              placeholder="Descripción"
+              name="description"
+              value={form.description}
+              onChange={handleChange}
+            />
+          </div>
+          <div className="col-md-2">
+            <input
+              type="number"
+              step="0.01"
+              className="form-control"
+              placeholder="Precio"
+              name="price"
+              value={form.price}
+              onChange={handleChange}
+              required
+            />
+          </div>
+          <div className="col-md-2">
+            <input
+              type="number"
+              className="form-control"
+              placeholder="Stock"
+              name="stock"
+              value={form.stock}
+              onChange={handleChange}
+              required
+            />
+          </div>
+          <div className="col-12 d-flex gap-2">
+            <button type="submit" className="btn btn-success">
+              {editingId ? "Actualizar" : "Crear"}
             </button>
-          )}
-        </div>
-      </form>
+            {editingId && (
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => {
+                  setForm({
+                    sku: "",
+                    name: "",
+                    description: "",
+                    price: "",
+                    stock: "",
+                  });
+                  setEditingId(null);
+                }}
+              >
+                Cancelar
+              </button>
+            )}
+          </div>
+        </form>
+      )}
 
+      {/* Buscar producto */}
       <div className="row mb-3 mt-4">
         <div className="col-md-3">
           <input
@@ -186,7 +190,7 @@ const handleSearch = async () => {
         </div>
       </div>
 
-      {/* Tabla */}
+      {/* Tabla de productos */}
       <table className="table table-striped table-hover mt-4">
         <thead>
           <tr>
@@ -195,7 +199,7 @@ const handleSearch = async () => {
             <th>Descripción</th>
             <th>Precio</th>
             <th>Stock</th>
-            <th>Acciones</th>
+            {role === "admin" && <th>Acciones</th>}
           </tr>
         </thead>
         <tbody>
@@ -206,20 +210,22 @@ const handleSearch = async () => {
               <td>{p.description}</td>
               <td>${p.price.toFixed(2)}</td>
               <td>{p.stock}</td>
-              <td>
-                <button
-                  className="btn btn-sm btn-primary me-2"
-                  onClick={() => handleEdit(p)}
-                >
-                  Editar
-                </button>
-                <button
-                  className="btn btn-sm btn-danger"
-                  onClick={() => handleDelete(p._id)}
-                >
-                  Eliminar
-                </button>
-              </td>
+              {role === "admin" && (
+                <td>
+                  <button
+                    className="btn btn-sm btn-primary me-2"
+                    onClick={() => handleEdit(p)}
+                  >
+                    Editar
+                  </button>
+                  <button
+                    className="btn btn-sm btn-danger"
+                    onClick={() => handleDelete(p._id)}
+                  >
+                    Eliminar
+                  </button>
+                </td>
+              )}
             </tr>
           ))}
         </tbody>

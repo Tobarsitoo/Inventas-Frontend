@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { fetchUsers, createUser, deleteUser } from "../api";
+import { fetchUsers, createUser, deleteUser, updateUser } from "../api";
 
 export default function Users() {
   const [users, setUsers] = useState([]);
@@ -8,6 +8,7 @@ export default function Users() {
     password: "",
     role: "cashier",
   });
+  const [editingId, setEditingId] = useState(null); // 👈 saber si estoy editando
 
   const token = localStorage.getItem("token");
 
@@ -26,8 +27,17 @@ export default function Users() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    await createUser(token, form);
+
+    if (editingId) {
+      // 👈 actualizar
+      await updateUser(token, editingId, form);
+    } else {
+      // 👈 crear
+      await createUser(token, form);
+    }
+
     setForm({ username: "", password: "", role: "cashier" });
+    setEditingId(null);
     await load();
   };
 
@@ -35,6 +45,16 @@ export default function Users() {
     if (!window.confirm("¿Seguro que deseas eliminar este usuario?")) return;
     await deleteUser(token, id);
     await load();
+  };
+
+  const handleEdit = (u) => {
+    // llenar el formulario con los datos del usuario
+    setForm({
+      username: u.username,
+      password: "", // 👈 por seguridad no mostramos contraseña, debe escribirse nueva si se quiere cambiar
+      role: u.role,
+    });
+    setEditingId(u._id);
   };
 
   return (
@@ -61,7 +81,7 @@ export default function Users() {
             name="password"
             value={form.password}
             onChange={handleChange}
-            required
+            required={!editingId} // si estamos editando, no obligamos a cambiar la contraseña
           />
         </div>
         <div className="col-md-2">
@@ -75,10 +95,22 @@ export default function Users() {
             <option value="admin">Administrador</option>
           </select>
         </div>
-        <div className="col-md-2">
+        <div className="col-md-2 d-flex gap-2">
           <button type="submit" className="btn btn-success w-100">
-            Crear
+            {editingId ? "Actualizar" : "Crear"}
           </button>
+          {editingId && (
+            <button
+              type="button"
+              className="btn btn-secondary w-100"
+              onClick={() => {
+                setForm({ username: "", password: "", role: "cashier" });
+                setEditingId(null);
+              }}
+            >
+              Cancelar
+            </button>
+          )}
         </div>
       </form>
 
@@ -97,6 +129,12 @@ export default function Users() {
               <td>{u.username}</td>
               <td>{u.role}</td>
               <td>
+                <button
+                  className="btn btn-sm btn-primary me-2"
+                  onClick={() => handleEdit(u)}
+                >
+                  Editar
+                </button>
                 <button
                   className="btn btn-sm btn-danger"
                   onClick={() => handleDelete(u._id)}

@@ -10,12 +10,12 @@ export const login = (username, password) =>
 
 // Usuarios (solo admin) ==================================
 export const fetchUsers = (token) =>
-  fetch(`${API}/auth/users`, {
+  fetch(`${API}/users/`, {
     headers: { Authorization: `Bearer ${token}` },
   }).then((r) => r.json());
 
 export const createUser = (token, user) =>
-  fetch(`${API}/auth/users`, {
+  fetch(`${API}/users`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -24,8 +24,18 @@ export const createUser = (token, user) =>
     body: JSON.stringify(user),
   }).then((r) => r.json());
 
+  export const updateUser = (token, id, user) =>
+  fetch(`${API}/users/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(user),
+  }).then((r) => r.json());
+
 export const deleteUser = (token, id) =>
-  fetch(`${API}/auth/users/${id}`, {
+  fetch(`${API}/users/${id}`, {
     method: "DELETE",
     headers: { Authorization: `Bearer ${token}` },
   }).then((r) => r.json());
@@ -91,7 +101,7 @@ export const exportReport = (token, date, format = "csv") =>
     headers: { Authorization: `Bearer ${token}` },
   });
 
-// Auditoría ==============================================
+// Auditoría (Solo admin) ==============================================
 export const fetchAuditLogs = (token) =>
   fetch(`${API}/audit`, {
     headers: { Authorization: `Bearer ${token}` },
